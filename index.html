@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Sonic Horror Adventure</title>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+
+<style>
+body { margin:0; background:black; overflow:hidden; }
+#menu, #ending {
+position:fixed; top:0; left:0; width:100%; height:100%;
+background:black; color:white; display:flex;
+flex-direction:column; align-items:center; justify-content:center;
+font-family:sans-serif; z-index:10;
+}
+#ending { display:none; text-align:center; }
+button { font-size:20px; padding:15px 30px; }
+</style>
+</head>
+
+<body>
+
+<div id="menu">
+<h1>Sonic Horror Adventure</h1>
+<button onclick="startGame()">BAŞLA</button>
+</div>
+
+<div id="ending">
+<p>Sonic ve Tails Angel Island’a ulaştı.</p>
+<p>Yaratık sınırı geçemedi.</p>
+<br>
+<p><i>Bu sadece bir kaçıştı.</i></p>
+<br>
+<h2>— SON —</h2>
+</div>
+
+<script>
+let game;
+
+function startGame(){
+document.getElementById("menu").style.display="none";
+
+const config = {
+type: Phaser.AUTO,
+width: window.innerWidth,
+height: window.innerHeight,
+physics: {
+default: 'arcade',
+arcade: { gravity: { y: 900 }, debug: false }
+},
+scene: { preload, create, update }
+};
+
+game = new Phaser.Game(config);
+}
+
+function preload(){
+this.load.image('sonic','https://i.imgur.com/Z6XKQYQ.png');
+this.load.image('tails','https://i.imgur.com/9XnqJ8M.png');
+this.load.image('monster','https://i.imgur.com/JYUB0mG.png');
+this.load.image('ground','https://i.imgur.com/3WQZ4Yj.png');
+}
+
+function create(){
+this.gameEnded = false;
+
+this.platforms = this.physics.add.staticGroup();
+for(let i=0;i<80;i++){
+this.platforms.create(i*200, this.scale.height-40, 'ground')
+.setScale(0.5).refreshBody();
+}
+
+this.sonic = this.physics.add.sprite(100,300,'sonic');
+this.sonic.setCollideWorldBounds(true);
+
+this.tails = this.physics.add.sprite(40,300,'tails');
+this.tails.setCollideWorldBounds(true);
+
+this.monster = this.physics.add.sprite(-600,300,'monster');
+this.monster.alpha = 0.25;
+
+this.physics.add.collider(this.sonic,this.platforms);
+this.physics.add.collider(this.tails,this.platforms);
+this.physics.add.collider(this.monster,this.platforms);
+
+this.cameras.main.startFollow(this.sonic);
+this.cameras.main.setBounds(0,0,16000,this.scale.height);
+
+this.input.on('pointerdown', ()=> {
+this.sonic.setVelocityY(-500);
+});
+
+}
+
+function update(){
+if(this.gameEnded) return;
+
+// Sonic sürekli koşar
+this.sonic.setVelocityX(250);
+
+// Tails takip
+let dist = this.sonic.x - this.tails.x;
+if(dist > 120) this.tails.setVelocityX(200);
+else this.tails.setVelocityX(0);
+
+// Monster AI
+let d = this.sonic.x - this.monster.x;
+if(this.sonic.body.velocity.x < 50){
+this.monster.setVelocityX(220);
+} else {
+this.monster.setVelocityX(120);
+}
+
+if(d < 300){
+this.cameras.main.shake(200,0.02);
+}
+
+// FINAL
+if(this.sonic.x > 15000 && !this.gameEnded){
+this.gameEnded = true;
+endGame.call(this);
+}
+}
+
+function endGame(){
+this.sonic.setVelocity(0);
+this.tails.setVelocity(0);
+this.monster.setVelocity(0);
+
+this.cameras.main.fadeOut(3000,0,0,0);
+setTimeout(()=>{
+document.getElementById("ending").style.display="flex";
+},3000);
+}
+</script>
+
+</body>
+</html>
